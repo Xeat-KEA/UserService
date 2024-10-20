@@ -6,14 +6,12 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
-import org.userservice.userservice.dto.OAuth2UserDetails;
+import org.userservice.userservice.domain.AuthRole;
+import org.userservice.userservice.dto.auth.OAuth2UserDetails;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Iterator;
 
 /**
  * 클래스 요약:
@@ -33,19 +31,21 @@ public class CustomSuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
         //OAuth2User (인증정보)
-        OAuth2UserDetails oAuth2UserDetails = (OAuth2UserDetails) authentication.getPrincipal();
-        String providerName = oAuth2UserDetails.getProviderName();
-
-        Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
-        Iterator<? extends GrantedAuthority> iterator = authorities.iterator();
-        GrantedAuthority auth = iterator.next();
-        String role = auth.getAuthority();
+        String providerName = ((OAuth2UserDetails) authentication.getPrincipal()).getProviderName();
+        String role = authentication.getAuthorities().stream().findFirst().get().getAuthority();
 
         //JWT 생성
         String token = jwtUtil.createToken(providerName, role);
-        log.info("===================SOCIAL LOGIN SUCCESS====================");
         response.addCookie(createCookie("Authorization", token));
-        response.sendRedirect("http://172.16.211.57:8080/auth/convert");
+        // 회원가입 안 한 사용자
+        if (role.equals(String.valueOf(AuthRole.ROLE_USER_A))) {
+            log.info(token);
+            response.sendRedirect("http://localhost:8080/auth/signup");
+        } else { //ROLE_USER_B
+            //TODO: refresh token 추가
+            //회원가입을 이미 했던 사용자
+            response.sendRedirect("http://localhost:8080/auth/cookie-to-header");
+        }
     }
 
     private Cookie createCookie(String key, String value) {

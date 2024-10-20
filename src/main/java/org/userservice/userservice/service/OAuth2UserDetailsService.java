@@ -7,12 +7,15 @@ import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
+import org.userservice.userservice.domain.AuthRole;
 import org.userservice.userservice.domain.User;
-import org.userservice.userservice.dto.OAuth2UserDetails;
-import org.userservice.userservice.dto.NaverResponse;
-import org.userservice.userservice.dto.OAuth2Response;
+import org.userservice.userservice.dto.auth.OAuth2UserDetails;
+import org.userservice.userservice.dto.auth.NaverResponse;
+import org.userservice.userservice.dto.auth.OAuth2Response;
 import org.userservice.userservice.dto.UserDto;
 import org.userservice.userservice.repository.UserRepository;
+
+import java.time.LocalDate;
 
 /**
  * 클래스 요약:
@@ -48,27 +51,30 @@ public class OAuth2UserDetailsService extends DefaultOAuth2UserService {
 
         //리소스 서버에서 발급 받은 정보로 사용자를 특정할 아이디값을 만듬, ex) naver_12345
         String providerName = oAuth2Response.getProvider() + "_" + oAuth2Response.getProviderId();
-        String role = "ROLE_USER_A"; //소셜로그인만 진행하였을 경우 모두 회원가입해야한다.
         User user = userRepository.findById(providerName).orElse(null);
 
         if (user == null) {
             userRepository.save(User.builder()
                     .userId(providerName)
-                    .name(oAuth2Response.getName())
                     .email(oAuth2Response.getEmail())
-                    .role(role)
+                    .userName(oAuth2Response.getName())
+                    .phoneNumber(oAuth2Response.getMobile())
+                    .profileUrl(oAuth2Response.getProfileImage())
+                    .dateOfBirth(LocalDate.parse(oAuth2Response.getBirthYear() + "-" + oAuth2Response.getBirthday()))
+                    .role(AuthRole.ROLE_USER_A)
                     .build());
 
             UserDto userDto = UserDto.builder()
                     .providerName(providerName)
                     .name(oAuth2Response.getName())
-                    .role(role) //ROLE_USER_A
+                    .role(AuthRole.ROLE_USER_A)
                     .build();
             return new OAuth2UserDetails(userDto);
         } else {
             userRepository.save(user.toBuilder()
-                    .name(oAuth2Response.getName())
-                    .email(oAuth2Response.getEmail())
+                    .email(oAuth2Response.getEmail()) //이메일변경
+                    .userName(oAuth2Response.getName()) //개명
+                    .phoneNumber(oAuth2Response.getMobile()) //번호이동
                     .build());
 
             UserDto userDto = UserDto.builder()
