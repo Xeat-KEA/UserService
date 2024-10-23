@@ -14,7 +14,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @Builder(toBuilder = true)
 @Table(name = "users")
-public class User extends BaseEntity{
+public class User extends BaseEntity {
 
     @Id
     @Column(name = "user_id")
@@ -27,7 +27,7 @@ public class User extends BaseEntity{
     private String nickName;
 
     @Column(name = "user_name")
-    private String userName; //TODO: 필요여부 파악
+    private String userName;
 
     @Column(name = "phone_number")
     private String phoneNumber;
@@ -47,6 +47,10 @@ public class User extends BaseEntity{
     @Builder.Default
     private Integer solvedCount = 0; //해결한 문제 수
 
+    @Column(name = "user_rank")
+    @Builder.Default
+    private Integer userRank = 0; //사용자 순위
+
     @Column(name = "day_of_birth")
     private LocalDate dayOfBirth; //생년월일(2024-01-11)
 
@@ -56,5 +60,6 @@ public class User extends BaseEntity{
     @Enumerated(EnumType.STRING)
     private AuthRole role;
 
-    //rank, gender
+    @Enumerated(EnumType.STRING)
+    private Gender gender;
 }
